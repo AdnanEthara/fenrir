@@ -290,6 +290,11 @@ class FenrirDriveService(models.AbstractModel):
             folder_cache[dir_parts] = folder_id
             return folder_id
 
+        # Always create the standard package sub-folders, even if no file lands
+        # in them this run, so the Drive tree layout stays consistent.
+        for base in task._EXPORT_BASE_DIRS:
+            ensure_path((base,))
+
         for rel_path, content, mime, is_binary_upload, existing_s3_key in \
                 task._collect_export_files():
             parts = rel_path.split("/")

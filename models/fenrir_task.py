@@ -515,8 +515,15 @@ class FenrirTask(models.Model):
             return f"{_slug(tasks.code)}.zip"
         return f"{fallback}_{len(tasks)}.zip"
 
+    # Standard package sub-folders, always present in an export even when empty.
+    _EXPORT_BASE_DIRS = ("resources", "data", "environment", "tests", "submissions")
+
     def _write_rich_export(self, zf, root):
         self.ensure_one()
+        # Always materialise the standard package sub-folders, even when empty,
+        # via explicit zero-byte directory entries.
+        for base in self._EXPORT_BASE_DIRS:
+            zf.writestr(f"{root}/{base}/", b"")
         # ZIP includes the actual binary content (no S3 indirection); just
         # ignore the is_binary_upload / existing_s3_key flags.
         for rel_path, content, _mime, _is_binary, _s3 in self._collect_export_files():
