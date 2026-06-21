@@ -37,7 +37,7 @@
                             invisible="status not in (False, 'draft')"/>
                     <button name="action_submit_task" type="object"
                             string="Re-Submit" class="btn-warning"
-                            invisible="status != 'pending_review'"/>
+                            invisible="status not in ('pending_review', 'approved', 'completed', 'rejected')"/>
                     <button name="action_approve_task" type="object"
                             string="Approve" class="btn-primary"
                             groups="fenrir.group_fenrir_manager"
@@ -46,13 +46,17 @@
                             string="Reject" class="btn-danger"
                             groups="fenrir.group_fenrir_manager"
                             invisible="not id or status != 'pending_review'"/>
+                    <button name="action_complete_task" type="object"
+                            string="Complete" class="btn-primary"
+                            groups="fenrir.group_fenrir_manager"
+                            invisible="not id or status != 'approved'"/>
                     <button name="action_reapprove_task" type="object"
                             string="Re-approve" class="btn-warning"
                             groups="fenrir.group_fenrir_manager"
                             invisible="not id or status not in ('approved', 'completed')"
                             confirm="Re-approve will regenerate and overwrite this task's files in Google Drive. Continue?"/>
                     <field name="status" widget="statusbar"
-                           statusbar_visible="draft,pending_review,completed"/>
+                           statusbar_visible="draft,pending_review,approved,completed"/>
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">

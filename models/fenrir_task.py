@@ -244,7 +244,7 @@ class FenrirTask(models.Model):
         drive = self.env["fenrir.drive.service"]
         for rec in self:
             drive.upload_task(rec)
-            rec.status = "completed"
+            rec.status = "approved"
 
     def action_reapprove_task(self):
         if not self.env.user.has_group("fenrir.group_fenrir_manager"):
@@ -260,6 +260,12 @@ class FenrirTask(models.Model):
     def action_reject_task(self):
         if not self.env.user.has_group("fenrir.group_fenrir_manager"):
             raise UserError("Only managers can reject tasks.")
+        for rec in self:
+            rec.status = "rejected"
+
+    def action_complete_task(self):
+        if not self.env.user.has_group("fenrir.group_fenrir_manager"):
+            raise UserError("Only managers can complete tasks.")
         for rec in self:
             rec.status = "completed"
 
