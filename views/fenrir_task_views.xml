@@ -1,0 +1,854 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="fenrir_task_view_list" model="ir.ui.view">
+        <field name="name">fenrir.task.list</field>
+        <field name="model">fenrir.task</field>
+        <field name="arch" type="xml">
+            <list string="Tasks">
+                <field name="code" decoration-bf="1"/>
+                <field name="category_id"/>
+                <field name="lead_user_id" options="{'no_open': True}"/>
+                <field name="title"/>
+                <field name="reviewer_id" widget="many2one_avatar_user"/>
+                <field name="buyer_id" widget="many2one_avatar_user"/>
+                <!-- <field name="pricing" sum="Total"/> -->
+                <field name="price_tier" optional="hide"/>
+                <field name="delivery_time"/>
+                <field name="seller_offer_count" string="Sellers"/>
+                <field name="accepted_offer_count" string="Accepted" optional="hide"/>
+                <field name="status" widget="badge"
+                       decoration-success="status == 'approved' or status == 'completed'"
+                       decoration-warning="status == 'pending_review'"
+                       decoration-danger="status == 'cancelled' or status == 'rejected'"/>
+                <field name="submitted_at"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="fenrir_task_view_form" model="ir.ui.view">
+        <field name="name">fenrir.task.form</field>
+        <field name="model">fenrir.task</field>
+        <field name="arch" type="xml">
+            <form string="Task">
+                <header>
+                    <button name="action_submit_task" type="object"
+                            string="Submit Task" class="btn-primary"
+                            invisible="status not in (False, 'draft')"/>
+                    <button name="action_submit_task" type="object"
+                            string="Re-Submit" class="btn-warning"
+                            invisible="status != 'pending_review'"/>
+                    <button name="action_approve_task" type="object"
+                            string="Approve" class="btn-primary"
+                            groups="fenrir.group_fenrir_manager"
+                            invisible="not id or status != 'pending_review'"/>
+                    <button name="action_reject_task" type="object"
+                            string="Reject" class="btn-danger"
+                            groups="fenrir.group_fenrir_manager"
+                            invisible="not id or status != 'pending_review'"/>
+                    <button name="action_reapprove_task" type="object"
+                            string="Re-approve" class="btn-warning"
+                            groups="fenrir.group_fenrir_manager"
+                            invisible="not id or status not in ('approved', 'completed')"
+                            confirm="Re-approve will regenerate and overwrite this task's files in Google Drive. Continue?"/>
+                    <field name="status" widget="statusbar"
+                           statusbar_visible="draft,pending_review,completed"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_seller_offers" type="object"
+                                class="oe_stat_button" icon="fa-handshake-o">
+                            <field name="seller_offer_count" widget="statinfo"
+                                   string="Sellers"/>
+                        </button>
+                    </div>
+
+                    <div class="oe_title">
+                        <label for="code" string="Task Code"/>
+                        <h1 class="mb-0">
+                            <field name="code" placeholder="e.g. GDV-002"/>
+                        </h1>
+                        <h2 class="text-muted mt-1">
+                            <field name="title" placeholder="Project title..."/>
+                        </h2>
+                    </div>
+
+                    <group>
+                        <group string="Classification" name="group_classification">
+                            <field name="category_id" options="{'no_create_edit': True}"/>
+                            <field name="subcategory" placeholder="e.g. Logo Design"/>
+                            <field name="lead_user_id" options="{'no_open': True}"/>
+                            <field name="reviewer_id" widget="many2one_avatar_user"/>
+                            <field name="difficulty_estimate"/>
+                            <field name="estimated_completion_time_hours"/>
+                            <field name="tags" placeholder="logo, vintage, emblem"/>
+                        </group>
+                        <group string="Buyer &amp; Pricing" name="group_pricing">
+                            <field name="buyer_id" widget="many2one_avatar_user"/>
+                            <!-- <field name="pricing" widget="float"/> -->
+                            <field name="price_tier"/>
+                            <field name="delivery_time"/>
+                            <field name="order_accepted_date"/>
+                        </group>
+                    </group>
+
+                    <group invisible="not drive_folder_id" string="Google Drive"
+                           name="group_drive">
+                        <field name="drive_folder_url" widget="url"/>
+                        <field name="drive_last_uploaded_at"/>
+                    </group>
+
+                    <separator string="Recreation Notes" name="sep_recreation"/>
+                    <field name="recreation_notes" nolabel="1"
+                           placeholder="How the original gig concept was adapted, what was fictionalized, confirmation that no proprietary assets were used..."/>
+
+                    <separator string="Overview" name="sep_overview"/>
+                    <field name="overview" nolabel="1"
+                           placeholder="Brief project overview..."/>
+
+                    <separator string="Scope of Work" name="sep_scope"/>
+                    <field name="scope_of_work" nolabel="1"
+                           placeholder="What needs to be built / delivered..."/>
+
+                    <separator string="Company Details" name="sep_company"/>
+                    <field name="company_details" nolabel="1"
+                           placeholder="Company name, location, contact..."/>
+
+                    <separator string="Resources" name="sep_resources"/>
+                    <!-- <group>
+                        <label for="assets_url" string="Assets"/>
+                        <div class="o_row">
+                            <field name="assets_url" widget="url"
+                                   placeholder="https://..." nolabel="1"/>
+                            <field name="assets_file" filename="assets_filename"
+                                   widget="binary" nolabel="1"/>
+                            <field name="assets_filename" invisible="1"/>
+                        </div>
+                        <label for="rubrics_url" string="Rubrics"/>
+                        <div class="o_row">
+                            <field name="rubrics_url" widget="url"
+                                   placeholder="https://..." nolabel="1"/>
+                            <field name="rubrics_file" filename="rubrics_filename"
+                                   widget="binary" nolabel="1"/>
+                            <field name="rubrics_filename" invisible="1"/>
+                        </div>
+                        <label for="instruction_md_url" string="Instruction.md"/>
+                        <div class="o_row">
+                            <field name="instruction_md_url" widget="url"
+                                   placeholder="https://..." nolabel="1"/>
+                            <field name="instruction_md_file"
+                                   filename="instruction_md_filename"
+                                   widget="binary" nolabel="1"/>
+                            <field name="instruction_md_filename" invisible="1"/>
+                        </div>
+                    </group> -->
+                    <group>
+                        <label for="assets_file" string="Project Requirements Document (PRD)"/>
+                        <div class="o_row">
+                            <field name="assets_file" filename="assets_filename"
+                                widget="binary" nolabel="1"/>
+                            <field name="assets_filename" invisible="1"/>
+                        </div>
+                        <label for="instruction_md_file" string="Instruction.md"/>
+                        <div class="o_row">
+                            <field name="instruction_md_file"
+                                filename="instruction_md_filename"
+                                widget="binary" nolabel="1"/>
+                            <field name="instruction_md_filename" invisible="1"/>
+                        </div>
+                    </group>
+                    <field name="instruction_notes"
+                           placeholder="Notes about instruction.md (used in license.json)..."/>
+
+                    <separator string="Rubrics" name="sep_rubrics"/>
+                    <div class="mb-2 d-flex gap-2 align-items-center">
+                        <button name="%(fenrir.fenrir_rubric_import_wizard_action)d"
+                                type="action"
+                                string="Import from CSV"
+                                class="btn-secondary"
+                                context="{'default_task_id': id}"
+                                icon="fa-upload"/>
+                        <a href="/fenrir/static/src/sample_rubrics.csv"
+                           download="sample_rubrics.csv"
+                           class="btn btn-link btn-sm">
+                            <i class="fa fa-download me-1"
+                               title="Download" aria-label="Download"
+                               role="img"/>
+                            Download sample CSV
+                        </a>
+                        <span class="text-muted small">
+                            (clicking Import on a new task saves it first)
+                        </span>
+                    </div>
+                    <field name="rubric_ids" nolabel="1" mode="kanban,list">
+                        <kanban class="o_kanban_dashboard">
+                            <field name="name"/>
+                            <field name="description"/>
+                            <field name="sequence"/>
+                            <templates>
+                                <t t-name="card">
+                                    <div class="oe_kanban_card oe_kanban_global_click p-2">
+                                        <div class="mb-1">
+                                            <strong class="text-truncate">
+                                                <field name="name" placeholder="Rubric name"/>
+                                            </strong>
+                                        </div>
+                                        <div class="text-muted small" t-if="record.description.raw_value">
+                                            <field name="description"/>
+                                        </div>
+                                    </div>
+                                </t>
+                            </templates>
+                        </kanban>
+                        <list editable="bottom" string="Rubrics">
+                            <field name="sequence" widget="handle"/>
+                            <field name="name" placeholder="Rubric name..."/>
+                            <field name="description" placeholder="What this measures..."/>
+                        </list>
+                        <form string="Rubric">
+                            <sheet>
+                                <div class="oe_title">
+                                    <label for="name"/>
+                                    <h1><field name="name" placeholder="Rubric name..."/></h1>
+                                </div>
+                                <group>
+                                    <field name="sequence"/>
+                                </group>
+                                <separator string="Description"/>
+                                <field name="description" nolabel="1"
+                                       placeholder="What this rubric measures..."/>
+                            </sheet>
+                        </form>
+                    </field>
+
+                    <separator string="Attachments" name="sep_attachments"/>
+                    <widget name="fenrir_attachment_uploader"/>
+                    <field name="attachment_ids" nolabel="1" mode="kanban,list"
+                           domain="[('folder', '!=', 'data')]">
+                        <kanban class="o_kanban_dashboard">
+                            <field name="file_name"/>
+                            <field name="attachment"/>
+                            <field name="s3_key"/>
+                            <field name="description"/>
+                            <field name="sequence"/>
+                            <templates>
+                                <t t-name="card">
+                                    <div class="oe_kanban_card oe_kanban_global_click p-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="fa fa-paperclip fa-lg text-primary"
+                                               title="Attachment" aria-label="Attachment" role="img"/>
+                                            <strong class="text-truncate flex-grow-1">
+                                                <field name="file_name" placeholder="File name"/>
+                                            </strong>
+                                        </div>
+                                        <div class="text-muted small mt-1 text-truncate" t-if="record.description.raw_value">
+                                            <field name="description"/>
+                                        </div>
+                                        <div class="mt-2" t-if="!record.s3_key.raw_value">
+                                            <field name="attachment" filename="file_name" widget="binary"/>
+                                        </div>
+                                        <div class="mt-2 small text-success" t-if="record.s3_key.raw_value">
+                                            <i class="fa fa-cloud" aria-hidden="true"/> Stored in S3
+                                        </div>
+                                    </div>
+                                </t>
+                            </templates>
+                        </kanban>
+                        <list editable="bottom" string="Attachments"
+                              decoration-info="is_generated"
+                              decoration-success="s3_key">
+                            <field name="sequence" widget="handle"/>
+                            <field name="file_name" placeholder="logo.png"/>
+                            <field name="folder"/>
+                            <field name="is_generated" widget="boolean_toggle"
+                                   readonly="1" optional="show"/>
+                            <field name="license"/>
+                            <field name="source_url" optional="show"
+                                   placeholder="https://..."/>
+                            <field name="attachment" filename="file_name" string="File"
+                                   invisible="s3_key"/>
+                            <field name="s3_key" optional="show" readonly="1"/>
+                            <field name="s3_uploaded_at" optional="hide" readonly="1"/>
+                            <field name="file_size" optional="hide" readonly="1"/>
+                            <button name="action_open_s3_download" type="object"
+                                    icon="fa-cloud-download" title="Download from S3"
+                                    invisible="not s3_key"/>
+                            <field name="description" optional="hide"
+                                   placeholder="Optional caption..."/>
+                            <field name="notes"
+                                   placeholder="Notes for license.json..."/>
+                        </list>
+                        <form string="Attachment">
+                            <sheet>
+                                <div class="oe_title">
+                                    <label for="file_name"/>
+                                    <h1><field name="file_name" placeholder="logo.png"/></h1>
+                                </div>
+                                <group>
+                                    <group string="Export">
+                                        <field name="folder"/>
+                                        <field name="license"/>
+                                        <field name="source_url"
+                                               placeholder="https://..."/>
+                                    </group>
+                                    <group string="Display">
+                                        <field name="description"
+                                               placeholder="Optional caption..."/>
+                                        <field name="sequence"/>
+                                    </group>
+                                </group>
+                                <separator string="File"/>
+                                <field name="attachment" filename="file_name"
+                                       nolabel="1" widget="binary"
+                                       invisible="s3_key"/>
+                                <div invisible="not s3_key" class="alert alert-info mb-2" role="status">
+                                    Stored in S3 —
+                                    <field name="s3_key" readonly="1" class="oe_inline"/>
+                                    (<field name="file_size" readonly="1" class="oe_inline"/> bytes,
+                                    uploaded <field name="s3_uploaded_at" readonly="1" class="oe_inline"/>).
+                                    <button name="action_open_s3_download" type="object"
+                                            string="Download" class="btn-link"
+                                            icon="fa-cloud-download"/>
+                                </div>
+                                <separator string="Notes"/>
+                                <field name="notes" nolabel="1"
+                                       placeholder="Notes about this asset (used in license.json)..."/>
+                            </sheet>
+                        </form>
+                    </field>
+
+                    <!-- <separator string="Data" name="sep_data"/>
+                    <widget name="fenrir_attachment_uploader" default_folder="data"/>
+                    <field name="data_attachment_ids" nolabel="1" mode="kanban,list"
+                           context="{'default_folder': 'data'}">
+                        <kanban class="o_kanban_dashboard">
+                            <field name="file_name"/>
+                            <field name="attachment"/>
+                            <field name="s3_key"/>
+                            <field name="description"/>
+                            <field name="sequence"/>
+                            <templates>
+                                <t t-name="card">
+                                    <div class="oe_kanban_card oe_kanban_global_click p-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="fa fa-database fa-lg text-primary"
+                                               title="Data" aria-label="Data" role="img"/>
+                                            <strong class="text-truncate flex-grow-1">
+                                                <field name="file_name" placeholder="File name"/>
+                                            </strong>
+                                        </div>
+                                        <div class="text-muted small mt-1 text-truncate" t-if="record.description.raw_value">
+                                            <field name="description"/>
+                                        </div>
+                                        <div class="mt-2" t-if="!record.s3_key.raw_value">
+                                            <field name="attachment" filename="file_name" widget="binary"/>
+                                        </div>
+                                        <div class="mt-2 small text-success" t-if="record.s3_key.raw_value">
+                                            <i class="fa fa-cloud" aria-hidden="true"/> Stored in S3
+                                        </div>
+                                    </div>
+                                </t>
+                            </templates>
+                        </kanban>
+                        <list editable="bottom" string="Data"
+                              decoration-success="s3_key">
+                            <field name="sequence" widget="handle"/>
+                            <field name="file_name" placeholder="dataset.csv"/>
+                            <field name="folder" column_invisible="1"/>
+                            <field name="license"/>
+                            <field name="source_url" optional="hide"
+                                   placeholder="https://..."/>
+                            <field name="attachment" filename="file_name" string="File"
+                                   invisible="s3_key"/>
+                            <field name="s3_key" optional="show" readonly="1"/>
+                            <field name="s3_uploaded_at" optional="hide" readonly="1"/>
+                            <field name="file_size" optional="hide" readonly="1"/>
+                            <button name="action_open_s3_download" type="object"
+                                    icon="fa-cloud-download" title="Download from S3"
+                                    invisible="not s3_key"/>
+                            <field name="description" optional="hide"
+                                   placeholder="Optional caption..."/>
+                            <field name="notes"
+                                   placeholder="Notes for license.json..."/>
+                        </list>
+                    </field> -->
+
+                    <separator string="Seller Offers" name="sep_sellers"/>
+                    <div class="mb-2" invisible="not id">
+                        <button name="action_renumber_sellers"
+                                type="object"
+                                string="Renumber Sellers"
+                                class="btn-secondary"
+                                icon="fa-sort-numeric-asc"
+                                confirm="This will reassign seller_no sequentially (1, 2, 3, …) to all seller offers on this task. Continue?"/>
+                        <span class="text-muted small ms-2">
+                            (use once to fix duplicate seller_no values from old data)
+                        </span>
+                    </div>
+                    <field name="seller_offer_ids" nolabel="1" mode="kanban,list">
+                        <kanban class="o_kanban_dashboard fenrir-seller-stacked">
+                            <field name="seller_no"/>
+                            <field name="seller"/>
+                            <field name="received_custom_offer"/>
+                            <field name="sellers_initial_ask"/>
+                            <field name="negotiated_offer"/>
+                            <field name="accepted"/>
+                            <field name="final_payment_amount"/>
+                            <field name="final_payment_currency"/>
+                            <field name="delivery_received"/>
+                            <field name="accepted_delivery"/>
+                            <field name="overall_rating"/>
+                            <field name="deliverable_file_ids"/>
+                            <templates>
+                                <t t-name="card">
+                                    <div class="oe_kanban_card p-2">
+                                        <div class="d-flex justify-content-between align-items-start oe_kanban_global_click">
+                                            <h4 class="m-0">
+                                                Seller&#160;<field name="seller_no"/>
+                                            </h4>
+                                            <span t-attf-class="badge #{record.accepted.raw_value === 'yes' ? 'text-bg-success' : record.accepted.raw_value === 'cancelled' ? 'text-bg-danger' : 'text-bg-secondary'}">
+                                                <field name="accepted"/>
+                                            </span>
+                                        </div>
+                                        <div class="text-muted small text-truncate oe_kanban_global_click"
+                                             t-if="record.seller.raw_value">
+                                            <field name="seller"/>
+                                        </div>
+                                        <hr class="my-2"/>
+                                        <div class="d-flex justify-content-between small oe_kanban_global_click">
+                                            <span>Initial:
+                                                <strong><field name="sellers_initial_ask"/></strong>
+                                            </span>
+                                            <span>Negotiated:
+                                                <strong><field name="negotiated_offer"/></strong>
+                                            </span>
+                                        </div>
+                                        <div class="d-flex justify-content-between small mt-1 oe_kanban_global_click">
+                                            <span>Final:
+                                                <strong>
+                                                    <field name="final_payment_amount"/>
+                                                    <field name="final_payment_currency"/>
+                                                </strong>
+                                            </span>
+                                        </div>
+                                        <div class="small mt-2 oe_kanban_global_click">
+                                            <span class="me-2">Delivery: <field name="delivery_received"/></span>
+                                            <span>Accepted: <field name="accepted_delivery"/></span>
+                                        </div>
+                                        <div class="small mt-1 oe_kanban_global_click"
+                                             t-if="record.overall_rating.raw_value">
+                                            <i class="fa fa-star text-warning me-1"
+                                               title="Overall rating" aria-label="Overall rating" role="img"/>
+                                            Overall: <strong><field name="overall_rating"/></strong>
+                                        </div>
+                                        <hr class="my-2"/>
+                                        <div class="small text-muted mb-1">
+                                            <i class="fa fa-cloud me-1" aria-hidden="true"/>
+                                            Deliverables (S3)
+                                        </div>
+                                        <field name="deliverable_file_ids"
+                                               widget="fenrir_deliverable_files"
+                                               nolabel="1"/>
+                                    </div>
+                                </t>
+                            </templates>
+                        </kanban>
+                        <list string="Seller Offers">
+                            <field name="seller"/>
+                            <field name="received_custom_offer"/>
+                            <field name="sellers_initial_ask"/>
+                            <field name="negotiated_offer"/>
+                            <field name="accepted"/>
+                            <field name="final_payment_amount"/>
+                            <field name="final_payment_currency"/>
+                            <field name="delivery_received"/>
+                            <field name="accepted_delivery"/>
+                            <field name="deliverable_file_ids"
+                                   widget="fenrir_deliverable_inline"
+                                   string="Files" optional="show"/>
+                        </list>
+                        <form string="Seller Offer">
+                            <sheet>
+                                <div class="oe_title">
+                                    <label for="seller_no" string="Seller"/>
+                                    <h1>
+                                        Seller&#160;<field name="seller_no"
+                                                           readonly="1"
+                                                           class="oe_inline"/>
+                                    </h1>
+                                    <h2>
+                                        <field name="seller"
+                                               placeholder="Optional freelancer name..."/>
+                                    </h2>
+                                </div>
+
+                                <separator string="Order Info"/>
+                                <group>
+                                    <group>
+                                        <field name="seller_username"
+                                               placeholder="@handle"/>
+                                        <field name="seller_level"/>
+                                        <field name="seller_profile_url" widget="url"/>
+                                    </group>
+                                    <group>
+                                        <field name="order_id" placeholder="FO..."/>
+                                        <field name="order_date"/>
+                                        <field name="delivery_date"/>
+                                        <field name="delivery_time_days" readonly="1"/>
+                                        <field name="revisions_requested"/>
+                                        <field name="price_paid_usd"/>
+                                    </group>
+                                </group>
+
+                                <separator string="Offer"/>
+                                <group>
+                                    <group>
+                                        <field name="received_custom_offer"/>
+                                        <field name="sellers_initial_ask"/>
+                                        <field name="negotiated_offer"/>
+                                    </group>
+                                    <group>
+                                        <field name="accepted"/>
+                                        <field name="final_payment_amount"/>
+                                        <field name="final_payment_currency"/>
+                                    </group>
+                                </group>
+
+                                <separator string="Conversation"/>
+                                <field name="conversation" nolabel="1"
+                                       placeholder="Paste chat transcript here..."/>
+
+                                <separator string="Delivery"/>
+                                <group>
+                                    <group>
+                                        <field name="delivery_received"/>
+                                        <field name="accepted_delivery"/>
+                                    </group>
+                                    <group>
+                                        <field name="deliverables_link"
+                                               widget="url"/>
+                                    </group>
+                                </group>
+                                <field name="deliverable_attachment_ids"
+                                       widget="many2many_binary" nolabel="1"
+                                       invisible="not deliverable_attachment_ids"
+                                       readonly="1"
+                                       string="Legacy deliverables (local filestore)"/>
+
+                                <separator string="Artifacts"/>
+                                <group>
+                                    <group>
+                                        <field name="data_media"/>
+                                        <field name="resources"/>
+                                        <field name="environment"/>
+                                    </group>
+                                    <group>
+                                        <field name="test_unit_tests"/>
+                                        <field name="license_ref"/>
+                                    </group>
+                                </group>
+
+                                <separator string="Metadata.json"/>
+                                <field name="metadata_json" nolabel="1"
+                                       placeholder='{"key": "value"}'/>
+
+                                <separator string="Automated Checks"/>
+                                <field name="automated_checks" nolabel="1"
+                                       placeholder="Automated QC results..."/>
+
+                                <separator string="Notes"/>
+                                <field name="notes" nolabel="1"/>
+
+                                <separator string="Rubric Scoring"/>
+                                <div class="mb-2 d-flex gap-2 align-items-center"
+                                     invisible="not id">
+                                    <button name="action_export_rubric_scores"
+                                            type="object"
+                                            string="Export to CSV"
+                                            class="btn-secondary"
+                                            icon="fa-download"/>
+                                    <button name="%(fenrir.fenrir_rubric_score_import_wizard_action)d"
+                                            type="action"
+                                            string="Import from CSV"
+                                            class="btn-secondary"
+                                            icon="fa-upload"
+                                            context="{'default_seller_offer_id': id}"/>
+                                </div>
+                                <field name="rubric_score_ids" nolabel="1">
+                                    <list editable="bottom"
+                                          create="0" delete="0"
+                                          string="Rubric Scores">
+                                        <field name="rubric_id"
+                                               column_invisible="1"/>
+                                        <field name="rubric_sequence"
+                                               column_invisible="1"/>
+                                        <field name="rubric_name"
+                                               readonly="1" string="Rubric"/>
+                                        <field name="rubric_description"
+                                               readonly="1" string="Description"
+                                               optional="show"/>
+                                        <field name="rating"/>
+                                        <field name="justification"
+                                               placeholder="Reasoning..."/>
+                                    </list>
+                                </field>
+
+                                <separator string="Overall"/>
+                                <group>
+                                    <field name="overall_rating"/>
+                                    <field name="overall_justification"
+                                           placeholder="Overall reasoning..."/>
+                                </group>
+                            </sheet>
+                        </form>
+                    </field>
+
+                    <separator string="Remarks" name="sep_remarks"/>
+                    <field name="remarks" nolabel="1"
+                           placeholder="Internal remarks..."/>
+
+                    <separator string="Generation Settings" name="sep_generation"/>
+                    <notebook>
+                        <page string="Environment Generation" name="page_auto_docker">
+                            <group>
+                                <group string="Environment">
+                                    <field name="environment_type" readonly="1"/>
+                                    <field name="environment_base_runtime_ids"
+                                           widget="many2many_tags"
+                                           options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"
+                                           placeholder="Pick one or more runtimes..."/>
+                                    <field name="key_dependency_ids"
+                                           widget="many2many_tags"
+                                           readonly="1"
+                                           options="{'no_create': True, 'no_open': True}"/>
+                                    <!-- Legacy free-text fields, hidden but kept for safety -->
+                                    <field name="environment_base_runtime" invisible="1"/>
+                                    <field name="key_dependencies" invisible="1"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Manual Upload" name="page_manual_upload">
+                            <group>
+                                <label for="dockerfile_attachment" string="Dockerfile"/>
+                                <div class="o_row">
+                                    <field name="dockerfile_attachment"
+                                           filename="dockerfile_filename"
+                                           widget="binary" nolabel="1"/>
+                                    <field name="dockerfile_filename"
+                                           placeholder="Dockerfile" nolabel="1"/>
+                                </div>
+                                <label for="dockerignore_attachment" string=".dockerignore"/>
+                                <div class="o_row">
+                                    <field name="dockerignore_attachment"
+                                           filename="dockerignore_filename"
+                                           widget="binary" nolabel="1"/>
+                                    <field name="dockerignore_filename"
+                                           placeholder=".dockerignore" nolabel="1"/>
+                                </div>
+                                <label for="nginx_conf_attachment" string="nginx.conf"/>
+                                <div class="o_row">
+                                    <field name="nginx_conf_attachment"
+                                           filename="nginx_conf_filename"
+                                           widget="binary" nolabel="1"/>
+                                    <field name="nginx_conf_filename"
+                                           placeholder="nginx.conf" nolabel="1"/>
+                                </div>
+                                <label for="entrypoint_sh_attachment" string="setup.sh"/>
+                                <div class="o_row">
+                                    <field name="entrypoint_sh_attachment"
+                                           filename="entrypoint_sh_filename"
+                                           widget="binary" nolabel="1"/>
+                                    <field name="entrypoint_sh_filename"
+                                           placeholder="setup.sh" nolabel="1"/>
+                                </div>
+                            </group>
+                        </page>
+                    </notebook>
+
+                    <!--
+                        Previous button-reveal UI (Create Dockerfile / Upload Environment Files
+                        with Hide buttons). Replaced by the tab notebook above.
+                        Kept (commented) per user request to preserve all code.
+                    <field name="show_environment_config" invisible="1"/>
+                    <field name="show_environment_uploads" invisible="1"/>
+                    <div class="o_row mb-2">
+                        <button name="action_show_environment_config" type="object"
+                                string="Create Dockerfile" class="btn btn-primary"
+                                invisible="show_environment_config"/>
+                        <button name="action_show_environment_uploads" type="object"
+                                string="Upload Environment Files" class="btn btn-secondary"
+                                invisible="show_environment_uploads"/>
+                    </div>
+                    <div class="o_row mb-1" invisible="not show_environment_config">
+                        <button name="action_hide_environment_config" type="object"
+                                string="Hide Environment Configuration"
+                                class="btn btn-link btn-sm" icon="fa-times"/>
+                    </div>
+                    <group invisible="not show_environment_config">
+                        <group string="Environment">
+                            <field name="environment_type" readonly="1"/>
+                            <field name="environment_base_runtime_ids"
+                                   widget="many2many_tags"
+                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"
+                                   placeholder="Pick one or more runtimes..."/>
+                            <field name="key_dependency_ids"
+                                   widget="many2many_tags"
+                                   readonly="1"
+                                   options="{'no_create': True, 'no_open': True}"/>
+                            <field name="environment_base_runtime" invisible="1"/>
+                            <field name="key_dependencies" invisible="1"/>
+                        </group>
+                    </group>
+                    <separator string="Environment Files" name="sep_environment_files"
+                               invisible="not show_environment_uploads"/>
+                    <div class="o_row mb-1" invisible="not show_environment_uploads">
+                        <button name="action_hide_environment_uploads" type="object"
+                                string="Hide Environment Files"
+                                class="btn btn-link btn-sm" icon="fa-times"/>
+                    </div>
+                    <field name="environment_attachment_ids" nolabel="1" colspan="2"
+                           invisible="not show_environment_uploads"
+                           context="{'default_folder': 'environment'}">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="file_name" required="1"
+                                   placeholder="Dockerfile, docker-compose.yml, nginx.conf, ..."/>
+                            <field name="attachment" widget="binary" filename="file_name"/>
+                            <field name="folder" invisible="1"/>
+                        </list>
+                    </field>
+                    -->
+
+                    <separator string="Tests" name="sep_tests"/>
+                    <group>
+                        <label for="test_deliverables_attachment" string="test_deliverables.sh"/>
+                        <div class="o_row">
+                            <field name="test_deliverables_attachment"
+                                   filename="test_deliverables_filename"
+                                   widget="binary" nolabel="1"/>
+                            <field name="test_deliverables_filename"
+                                   placeholder="test_deliverables.sh" nolabel="1"/>
+                        </div>
+                    </group>
+
+
+
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="fenrir_task_view_search" model="ir.ui.view">
+        <field name="name">fenrir.task.search</field>
+        <field name="model">fenrir.task</field>
+        <field name="arch" type="xml">
+            <search string="Tasks">
+                <field name="code"/>
+                <field name="lead_user_id"/>
+                <field name="title"/>
+                <field name="category_id"/>
+                <field name="buyer_id"/>
+                <field name="reviewer_id"/>
+                <filter string="Approved" name="filter_approved"
+                        domain="[('status','=','approved')]"/>
+                <filter string="Rejected" name="filter_rejected"
+                        domain="[('status','=','rejected')]"/>
+                <filter string="Completed" name="filter_completed"
+                        domain="[('status','=','completed')]"/>
+                <filter string="Cancelled" name="filter_cancelled"
+                        domain="[('status','=','cancelled')]"/>
+                <group>
+                    <filter string="Category" name="group_category"
+                            context="{'group_by': 'category_id'}"/>
+                    <filter string="Status" name="group_status"
+                            context="{'group_by': 'status'}"/>
+                    <filter string="Reviewer" name="group_reviewer"
+                            context="{'group_by': 'reviewer_id'}"/>
+                    <filter string="Buyer" name="group_buyer"
+                            context="{'group_by': 'buyer_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="fenrir_task_view_kanban" model="ir.ui.view">
+        <field name="name">fenrir.task.kanban</field>
+        <field name="model">fenrir.task</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="status" class="o_kanban_small_column">
+                <field name="code"/>
+                <field name="title"/>
+                <field name="category_id"/>
+                <field name="buyer_id"/>
+                <field name="seller_offer_count"/>
+                <field name="status"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="oe_kanban_card oe_kanban_global_click">
+                            <div class="o_kanban_record_top">
+                                <strong><field name="code"/></strong>
+                                <span class="float-end">
+                                    <field name="category_id"/>
+                                </span>
+                            </div>
+                            <div class="o_kanban_record_body">
+                                <field name="title"/>
+                            </div>
+                            <div class="o_kanban_record_bottom">
+                                <span>Buyer: <field name="buyer_id"/></span>
+                                <span class="float-end">
+                                    <i class="fa fa-handshake-o"
+                                       title="Seller offers" aria-label="Seller offers" role="img"/>
+                                    <field name="seller_offer_count"/>
+                                </span>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="fenrir_task_export_server_action" model="ir.actions.server">
+        <field name="name">Export Tasks</field>
+        <field name="model_id" ref="model_fenrir_task"/>
+        <field name="binding_model_id" ref="model_fenrir_task"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_export_task()</field>
+    </record>
+
+    <record id="fenrir_task_action" model="ir.actions.act_window">
+        <field name="name">My Tasks</field>
+        <field name="res_model">fenrir.task</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="domain">[('lead_user_id', '=', uid)]</field>
+        <field name="context">{'default_lead_user_id': uid}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a new Fenrir task
+            </p>
+            <p>
+                Tasks you created. Track project briefs, reviewers, status,
+                pricing tiers and the full list of sellers approached.
+            </p>
+        </field>
+    </record>
+
+    <record id="fenrir_task_all_action" model="ir.actions.act_window">
+        <field name="name">All Tasks</field>
+        <field name="res_model">fenrir.task</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="context">{'from_all_tasks': True}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No tasks yet
+            </p>
+            <p>
+                Every task in the organization, across all users.
+            </p>
+        </field>
+    </record>
+
+</odoo>

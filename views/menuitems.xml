@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem id="fenrir_root_menu"
+              name="Fenrir"
+              sequence="60"/>
+
+    <menuitem id="fenrir_tasks_menu"
+              name="My Tasks"
+              parent="fenrir_root_menu"
+              action="fenrir_task_action"
+              sequence="10"/>
+
+    <menuitem id="fenrir_tasks_all_menu"
+              name="All Tasks"
+              parent="fenrir_root_menu"
+              action="fenrir_task_all_action"
+              groups="fenrir.group_fenrir_manager"
+              sequence="15"/>
+
+    <menuitem id="fenrir_config_menu"
+              name="Configuration"
+              parent="fenrir_root_menu"
+              groups="fenrir.group_fenrir_manager"
+              sequence="90"/>
+
+    <menuitem id="fenrir_config_categories_menu"
+              name="Categories"
+              parent="fenrir_config_menu"
+              action="fenrir_category_action"
+              groups="fenrir.group_fenrir_manager"
+              sequence="10"/>
+
+    <menuitem id="fenrir_config_runtimes_menu"
+              name="Environment Runtimes"
+              parent="fenrir_config_menu"
+              action="fenrir_environment_runtime_action"
+              groups="fenrir.group_fenrir_manager"
+              sequence="15"/>
+
+    <menuitem id="fenrir_config_drive_menu"
+              name="Google Drive"
+              parent="fenrir_config_menu"
+              action="fenrir_drive_config_action"
+              groups="fenrir.group_fenrir_manager"
+              sequence="20"/>
+
+</odoo>

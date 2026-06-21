@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="fenrir_seller_offer_view_list" model="ir.ui.view">
+        <field name="name">fenrir.seller.offer.list</field>
+        <field name="model">fenrir.seller.offer</field>
+        <field name="arch" type="xml">
+            <list string="Seller Offers">
+                <field name="task_code"/>
+                <field name="category_id" optional="show"/>
+                <field name="seller_no" string="#"/>
+                <field name="seller"/>
+                <field name="seller_username" optional="show"/>
+                <field name="seller_level" optional="hide"/>
+                <field name="received_custom_offer"/>
+                <field name="sellers_initial_ask"/>
+                <field name="negotiated_offer"/>
+                <field name="accepted"/>
+                <field name="final_payment_amount"/>
+                <field name="final_payment_currency"/>
+                <field name="price_paid_usd" optional="hide"/>
+                <field name="order_date" optional="hide"/>
+                <field name="delivery_time_days" optional="hide"/>
+                <field name="delivery_received"/>
+                <field name="accepted_delivery"/>
+                <field name="overall_rating" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="fenrir_seller_offer_view_form" model="ir.ui.view">
+        <field name="name">fenrir.seller.offer.form</field>
+        <field name="model">fenrir.seller.offer</field>
+        <field name="arch" type="xml">
+            <form string="Seller Offer">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="seller_no" string="Seller"/>
+                        <h1>
+                            Seller&#160;<field name="seller_no" readonly="1" class="oe_inline"/>
+                        </h1>
+                        <h2>
+                            <field name="seller" placeholder="Optional freelancer name..."/>
+                        </h2>
+                    </div>
+
+                    <group>
+                        <group string="Task">
+                            <field name="task_id" options="{'no_create': True}"/>
+                            <field name="task_code" readonly="1"/>
+                            <field name="category_id" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <separator string="Order Info"/>
+                    <group>
+                        <group>
+                            <field name="seller_username" placeholder="@handle"/>
+                            <field name="seller_level"/>
+                            <field name="seller_profile_url" widget="url"/>
+                        </group>
+                        <group>
+                            <field name="order_id" placeholder="FO..."/>
+                            <field name="order_date"/>
+                            <field name="delivery_date"/>
+                            <field name="delivery_time_days" readonly="1"/>
+                            <field name="revisions_requested"/>
+                            <field name="price_paid_usd"/>
+                        </group>
+                    </group>
+
+                    <separator string="Offer"/>
+                    <group>
+                        <group>
+                            <field name="received_custom_offer"/>
+                            <field name="sellers_initial_ask"/>
+                            <field name="negotiated_offer"/>
+                        </group>
+                        <group>
+                            <field name="accepted"/>
+                            <field name="final_payment_amount"/>
+                            <field name="final_payment_currency"/>
+                        </group>
+                    </group>
+
+                    <separator string="Conversation"/>
+                    <group>
+                        <field name="conversation" nolabel="1"
+                               placeholder="Paste Fiverr / chat transcript here..."/>
+                    </group>
+
+                    <separator string="Delivery"/>
+                    <group>
+                        <group>
+                            <field name="delivery_received"/>
+                            <field name="accepted_delivery"/>
+                        </group>
+                        <group>
+                            <field name="deliverables_link" widget="url"/>
+                        </group>
+                    </group>
+                    <field name="deliverable_attachment_ids"
+                           widget="many2many_binary" nolabel="1"
+                           invisible="not deliverable_attachment_ids"
+                           readonly="1"
+                           string="Legacy deliverables (local filestore)"/>
+
+                    <separator string="Artifacts"/>
+                    <group>
+                        <group>
+                            <field name="data_media"/>
+                            <field name="resources"/>
+                            <field name="environment"/>
+                        </group>
+                        <group>
+                            <field name="test_unit_tests"/>
+                            <field name="license_ref"/>
+                        </group>
+                    </group>
+
+                    <separator string="Metadata.json"/>
+                    <group>
+                        <field name="metadata_json" nolabel="1"
+                               placeholder='{"key": "value"}'/>
+                    </group>
+
+                    <separator string="Automated Checks"/>
+                    <group>
+                        <field name="automated_checks" nolabel="1"
+                               placeholder="Automated QC results..."/>
+                    </group>
+
+                    <separator string="Notes"/>
+                    <group>
+                        <field name="notes" nolabel="1"/>
+                    </group>
+
+                    <separator string="Rubric Scoring"/>
+                    <div class="mb-2 d-flex gap-2 align-items-center"
+                         invisible="not id">
+                        <button name="action_export_rubric_scores"
+                                type="object"
+                                string="Export to CSV"
+                                class="btn-secondary"
+                                icon="fa-download"/>
+                        <button name="%(fenrir.fenrir_rubric_score_import_wizard_action)d"
+                                type="action"
+                                string="Import from CSV"
+                                class="btn-secondary"
+                                icon="fa-upload"
+                                context="{'default_seller_offer_id': id}"/>
+                    </div>
+                    <field name="rubric_score_ids" nolabel="1">
+                        <list editable="bottom" create="0" delete="0"
+                              string="Rubric Scores">
+                            <field name="rubric_id" column_invisible="1"/>
+                            <field name="rubric_sequence" column_invisible="1"/>
+                            <field name="rubric_name" readonly="1" string="Rubric"/>
+                            <field name="rubric_description" readonly="1"
+                                   string="Description" optional="show"/>
+                            <field name="rating"/>
+                            <field name="justification"
+                                   placeholder="Reasoning..."/>
+                        </list>
+                    </field>
+
+                    <separator string="Overall"/>
+                    <group>
+                        <field name="overall_rating"/>
+                        <field name="overall_justification"
+                               placeholder="Overall reasoning..."/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="fenrir_seller_offer_view_search" model="ir.ui.view">
+        <field name="name">fenrir.seller.offer.search</field>
+        <field name="model">fenrir.seller.offer</field>
+        <field name="arch" type="xml">
+            <search string="Seller Offers">
+                <field name="seller"/>
+                <field name="task_id"/>
+                <field name="task_code"/>
+                <field name="category_id"/>
+                <filter string="Accepted" name="filter_accepted"
+                        domain="[('accepted','=','yes')]"/>
+                <filter string="Cancelled" name="filter_cancelled"
+                        domain="[('accepted','=','cancelled')]"/>
+                <filter string="Delivery Received" name="filter_delivered"
+                        domain="[('delivery_received','=','yes')]"/>
+                <group>
+                    <filter string="Task" name="group_task"
+                            context="{'group_by': 'task_id'}"/>
+                    <filter string="Category" name="group_category"
+                            context="{'group_by': 'category_id'}"/>
+                    <filter string="Acceptance" name="group_accepted"
+                            context="{'group_by': 'accepted'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="fenrir_seller_offer_action" model="ir.actions.act_window">
+        <field name="name">Seller Offers</field>
+        <field name="res_model">fenrir.seller.offer</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Record a new seller offer
+            </p>
+            <p>
+                Each seller approached for a task — initial ask, negotiated
+                price, conversation log, delivery state and final payment.
+            </p>
+        </field>
+    </record>
+
+</odoo>
