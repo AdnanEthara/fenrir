@@ -104,6 +104,11 @@ class FenrirTask(models.Model):
     overview = fields.Text(string="Overview")
     scope_of_work = fields.Text(string="Scope of Work")
     company_details = fields.Text(string="Company Details")
+    input_asset_license_ids = fields.One2many(
+        comodel_name="fenrir.input.asset.license",
+        inverse_name="task_id",
+        string="Input Asset Licenses",
+    )
 
     assets_url = fields.Char(string="Project Requirements Document (PRD)")
     assets_file = fields.Binary(string="Project Requirements Document (PRD)", attachment=True,
@@ -394,13 +399,12 @@ class FenrirTask(models.Model):
     #                        help="Buyer-side pricing")
     price_tier = fields.Selection(
         selection=[
-            ("0-50", "0-50"),
-            ("50-100", "50-100"),
-            ("100-150", "100-150"),
-            ("150-200", "150-200"),
-            ("200+", "200+"),
+            ("$0-$50", "$0-$50"),
+            ("$50-$100", "$50-$100"),
+            ("$100-$150", "$100-$150"),
+            ("$150-$200", "$150-$200"),
         ],
-        default="0-50",
+        default="$0-$50",
         string="Price Tier",
         tracking=True,
     )

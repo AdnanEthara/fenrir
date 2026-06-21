@@ -424,16 +424,6 @@ def _split_packages(raw):
     return [p.strip() for p in raw.split(",") if p.strip()]
 
 
-def _parse_price_bracket(raw):
-    """Best-effort parse of '$50-$100' or '$0-$50' style strings."""
-    if not raw:
-        return None
-    m = re.match(r"\$?(\d+)\s*-\s*\$?(\d+)", raw.strip())
-    if not m:
-        return None
-    return {"low": int(m.group(1)), "high": int(m.group(2))}
-
-
 def build_task_metadata(task):
     """Schema-compliant task_metadata.json per the requirements doc."""
     return {
@@ -444,6 +434,14 @@ def build_task_metadata(task):
         "price_bracket": task.price_tier or task.price_bracket or "",
         "recreation_notes": task.recreation_notes or "",
         "input_asset_licenses": [
+            {
+                "asset": lic.asset or "",
+                "source": lic.source or "",
+                "license": lic.license_label(),
+                "url": lic.url or "",
+            }
+            for lic in task.input_asset_license_ids
+        ] + [
             {
                 "asset": att.file_name or "",
                 "source": att.source_url or "",
