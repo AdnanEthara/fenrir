@@ -88,7 +88,7 @@ set -e
 RUNTIME_DIR="{mount_path}"
 
 case "$1" in
-  test)
+  test|validate)
     shift
     DELIVERABLES_DIR="${{1:-$RUNTIME_DIR}}"
     echo "Running validation tests against: $DELIVERABLES_DIR"
@@ -102,9 +102,9 @@ case "$1" in
     exec nginx -g "daemon off;"
     ;;
   *)
-    echo "Usage: docker run <image> [test|serve]"
-    echo "  test [dir]  - run unit tests against deliverables directory"
-    echo "  serve       - serve build on port 80"
+    echo "Usage: docker run <image> [test|validate|serve]"
+    echo "  test|validate [dir] - run unit tests against the deliverables directory"
+    echo "  serve               - serve build on port 80"
     exit 1
     ;;
 esac
@@ -211,7 +211,7 @@ RUNTIME_DIR="{mount_path}"
 export PORT="${{PORT:-8000}}"
 
 case "$1" in
-  test)
+  test|validate)
     shift
     DELIVERABLES_DIR="${{1:-$RUNTIME_DIR}}"
     echo "Running validation tests against: $DELIVERABLES_DIR"
@@ -257,11 +257,11 @@ case "$1" in
     exec bash
     ;;
   *)
-    echo "Usage: docker run <image> [test|serve|shell]"
-    echo "  test [dir] - mechanical validation against the deliverables dir"
-    echo "  serve      - auto-detect Node/Python/static, install+build+run; with no"
-    echo "               manifest it falls back to a static file server (never errors)"
-    echo "  shell      - open a bash shell in $RUNTIME_DIR"
+    echo "Usage: docker run <image> [test|validate|serve|shell]"
+    echo "  test|validate [dir] - mechanical validation against the deliverables dir"
+    echo "  serve               - auto-detect Node/Python/static, install+build+run; with"
+    echo "                        no manifest it falls back to a static server (never errors)"
+    echo "  shell               - open a bash shell in $RUNTIME_DIR"
     exit 1
     ;;
 esac
@@ -513,6 +513,7 @@ def build_environment_files(task):
 
     if runtimes:
         multi = len(runtimes) > 1
+        needs_nginx = False
         for runtime in runtimes:
             vid = _runtime_variant_id(runtime.name)
             info = {
@@ -523,12 +524,17 @@ def build_environment_files(task):
             content = dockerfile_builder.render(vid, info)
             filename = f"Dockerfile.{vid}" if multi else "Dockerfile"
             files.append((filename, content))
-        # Runtime-built images keep the static nginx serve helper + config.
+            if dockerfile_builder.profile_for(runtime.name).get("role") == "static-server":
+                needs_nginx = True
+        # Runtime-built images keep the static serve helper. nginx.conf is only
+        # emitted when a static-server (nginx) runtime is selected — the
+        # Dockerfile COPYs it only for that role, so other runtimes don't need it.
         files.append(("setup.sh", ENTRYPOINT_STATIC_TEMPLATE.format(
             mount_path=mount_path,
             test_filename=test_filename,
         )))
-        files.append(("nginx.conf", NGINX_CONF_TEMPLATE.format(mount_path=mount_path)))
+        if needs_nginx:
+            files.append(("nginx.conf", NGINX_CONF_TEMPLATE.format(mount_path=mount_path)))
     else:
         # No runtime selected → general-purpose Ubuntu sandbox with broad
         # tooling for the common deliverable types. No nginx.conf — the
