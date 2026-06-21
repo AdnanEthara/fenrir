@@ -653,10 +653,6 @@ class FenrirTask(models.Model):
             files.append((f"{seller_dir}/ratings.json",
                           json.dumps(self._build_ratings(offer), indent=2, default=str).encode("utf-8"),
                           "application/json", GENERATED, None))
-            if offer.conversation:
-                files.append((f"{seller_dir}/conversation.txt",
-                              offer.conversation.encode("utf-8"),
-                              "text/plain", GENERATED, None))
 
             for att in offer.deliverable_attachment_ids:
                 if not att.datas:
