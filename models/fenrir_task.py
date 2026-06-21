@@ -640,7 +640,6 @@ class FenrirTask(models.Model):
                     "currency": offer.final_payment_currency or "",
                     "delivery_received": offer.delivery_received,
                     "accepted_delivery": offer.accepted_delivery,
-                    "deliverables_link": offer.deliverables_link or "",
                     "order_date": offer.order_date.isoformat() if offer.order_date else None,
                     "notes": offer.notes or "",
                 }
@@ -653,10 +652,6 @@ class FenrirTask(models.Model):
             if offer.conversation:
                 files.append((f"{seller_dir}/conversation.txt",
                               offer.conversation.encode("utf-8"),
-                              "text/plain", GENERATED, None))
-            if offer.automated_checks:
-                files.append((f"{seller_dir}/automated_checks.txt",
-                              offer.automated_checks.encode("utf-8"),
                               "text/plain", GENERATED, None))
 
             for att in offer.deliverable_attachment_ids:
